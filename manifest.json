@@ -1,0 +1,10 @@
+{
+    "display_name": "UwU Translation",
+    "loading_order": 300,
+    "requires": [],
+    "optional": [],
+    "js": "dist/index.js",
+    "css": "dist/style.css",
+    "author": "bmen25124-fork",
+    "version": "0.2.0"
+}
