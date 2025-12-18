@@ -6,5 +6,6 @@
     "js": "dist/index.js",
     "css": "dist/style.css",
     "author": "bmen25124-fork",
-    "version": "0.2.0"
+    "version": "0.2.0",
+    "homePage": "https://github.com/ICSLI/SillyTavern-UwU-Translation"
 }

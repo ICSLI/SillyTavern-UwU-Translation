@@ -4,8 +4,6 @@ A [SillyTavern](https://docs.sillytavern.app/) extension that provides real-time
 
 This is a fork of [SillyTavern-Magic-Translation](https://github.com/bmen25124/SillyTavern-Magic-Translation) with ChatML parsing capabilities.
 
-![settings](images/settings.png)
-
 ## Features
 
 - **Real-time Translation:** Translate chat messages using any configured LLM.
