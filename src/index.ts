@@ -103,6 +103,10 @@ async function initUI() {
   const showTranslateButton = $(
     `<div title="UwU Translate" class="mes_button mes_uwu_translation_button fa-solid fa-globe interactable" tabindex="0"></div>`,
   );
+  const reTranslateButton = $(
+    `<div title="Re-translate" class="mes_button mes_uwu_retranslate_button fa-solid fa-rotate interactable" tabindex="0" style="display: none;"></div>`,
+  );
+  $('#message_template .mes_buttons .extraMesButtons').prepend(reTranslateButton);
   $('#message_template .mes_buttons .extraMesButtons').prepend(showTranslateButton);
 
   $(document).on('click', '.mes_uwu_translation_button', async function () {
@@ -113,10 +117,54 @@ async function initUI() {
       st_echo('error', `Could not find message with id ${messageId}`);
       return;
     }
+
+    // State 1: Translation is showing → Hide (keep cache)
     if (message?.extra?.display_text) {
       delete message.extra.display_text;
       st_updateMessageBlock(messageId, message);
+      await context.saveChat();
+      // Hide re-translate button when translation is hidden
+      messageBlock.find('.mes_uwu_retranslate_button').hide();
       return;
+    }
+
+    // State 2: Cache exists but hidden → Show cached (no re-translate)
+    if (message?.extra?.uwu_cached_translation) {
+      if (typeof message.extra !== 'object') {
+        message.extra = {};
+      }
+      message.extra.display_text = message.extra.uwu_cached_translation;
+      st_updateMessageBlock(messageId, message);
+      await context.saveChat();
+      // Show re-translate button when translation is visible
+      messageBlock.find('.mes_uwu_retranslate_button').show();
+      return;
+    }
+
+    // State 3: No cache → Translate and save to both fields
+    await generateMessage(messageId, 'incomingMessage');
+    const eventData = {
+      messageId,
+      type: 'incomingMessage',
+      auto: false,
+    };
+    context.eventSource.emit('uwu_translation_done', eventData);
+    context.eventSource.emit('uwu_translation_character_message', eventData);
+  });
+
+  // Re-translate button click handler (force re-translation)
+  $(document).on('click', '.mes_uwu_retranslate_button', async function () {
+    const messageBlock = $(this).closest('.mes');
+    const messageId = Number(messageBlock.attr('mesid'));
+    const message = context.chat[messageId];
+    if (!message) {
+      st_echo('error', `Could not find message with id ${messageId}`);
+      return;
+    }
+    // Clear both display_text and cache before re-translating
+    if (message?.extra) {
+      delete message.extra.display_text;
+      delete message.extra.uwu_cached_translation;
     }
     await generateMessage(messageId, 'incomingMessage');
     const eventData = {
@@ -177,6 +225,19 @@ async function initUI() {
       context.eventSource.emit('uwu_translation_done', eventData);
       context.eventSource.emit('uwu_translation_user_message', eventData);
     }
+  });
+
+  // Sync re-translate button visibility when chat is loaded/changed
+  context.eventSource.on(EventNames.CHAT_CHANGED, () => {
+    // Wait for DOM to be updated
+    setTimeout(() => {
+      context.chat.forEach((message: any, idx: number) => {
+        // Show re-translate button ONLY when translation is visible (display_text exists)
+        const hasDisplayText = message?.extra?.display_text;
+        const messageBlock = $(`.mes[mesid="${idx}"]`);
+        messageBlock.find('.mes_uwu_retranslate_button').toggle(!!hasDisplayText);
+      });
+    }, 100);
   });
 
   const extensionsMenu = document.querySelector('#extensionsMenu');
@@ -503,6 +564,9 @@ async function generateMessage(messageId: number, type: 'userInput' | 'incomingM
           message.extra = {};
         }
         message.extra.display_text = displayText;
+        message.extra.uwu_cached_translation = displayText; // Save to cache for toggle
+        // Show re-translate button after translation is complete
+        $(`.mes[mesid="${messageId}"]`).find('.mes_uwu_retranslate_button').show();
       }
       st_updateMessageBlock(messageId, message);
       await context.saveChat();
