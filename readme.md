@@ -175,4 +175,11 @@ If your prompt doesn't use ChatML tags, the entire prompt will be sent as a sing
 ## Credits
 
 - Original extension: [SillyTavern-Magic-Translation](https://github.com/bmen25124/SillyTavern-Magic-Translation) by bmen25124
-- ChatML format support added in this fork
+- UwU Translation fork by ICSLI
+  - ChatML format support
+  - Translation caching with toggle behavior
+  - Re-translate button for forced re-translation
+
+## License
+
+MIT License - See [LICENSE](LICENSE) for details.

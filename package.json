@@ -10,9 +10,9 @@
         "prettify": "prettier --write \"src/**/*.ts\" \"templates/**/*.html\""
     },
     "type": "module",
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
+    "keywords": ["sillytavern", "translation", "chatml"],
+    "author": "ICSLI",
+    "license": "MIT",
     "devDependencies": {
         "@babel/core": "^7.26.0",
         "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
