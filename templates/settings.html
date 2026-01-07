@@ -1,0 +1,44 @@
+<div class="uwu-translation-settings">
+    <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+            <b>UwU Translation</b>
+            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+        </div>
+        <div class="inline-drawer-content">
+            <h4>Settings</h4>
+            <div class="flex-container marginTopBot5">
+                <div class="flex-container flex1 flexFlowColumn" title="Connection profile for translation">
+                    <label for="uwu_translation_profile"><small>Connection Profile</small></label>
+                    <select id="uwu_translation_profile" class="text_pole">
+                        <option value="">Auto (First Available)</option>
+                    </select>
+                </div>
+                <div class="flex-container flex1 flexFlowColumn" title="Automatic translation mode">
+                    <label for="uwu_translation_auto_mode"><small>Auto Mode</small></label>
+                    <select id="uwu_translation_auto_mode" class="text_pole">
+                        <option value="none">None</option>
+                        <option value="responses">Translate responses</option>
+                        <option value="inputs">Translate inputs</option>
+                        <option value="both">Translate both</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex-container marginTopBot5">
+                <div class="flex-container flex1 flexFlowColumn" title="Target language for user input translation">
+                    <label for="uwu_translation_input_language"><small>Input Target Language</small></label>
+                    <input id="uwu_translation_input_language" type="text" class="text_pole" placeholder="e.g., English">
+                </div>
+                <div class="flex-container flex1 flexFlowColumn" title="Target language for response translation">
+                    <label for="uwu_translation_output_language"><small>Output Target Language</small></label>
+                    <input id="uwu_translation_output_language" type="text" class="text_pole" placeholder="e.g., Korean">
+                </div>
+            </div>
+
+            <div class="flex-container flexFlowColumn marginTopBot5">
+                <label for="uwu_translation_prompt"><small>Translation Prompt (ChatML Support)</small></label>
+                <textarea id="uwu_translation_prompt" class="text_pole textarea_compact" rows="6" placeholder="Use {{lang}} for target language and {{text}} for content to translate."></textarea>
+            </div>
+        </div>
+    </div>
+</div>

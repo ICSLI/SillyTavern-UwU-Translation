@@ -1,0 +1,10 @@
+{
+    "display_name": "UwU Translation",
+    "loading_order": 300,
+    "requires": [],
+    "optional": [],
+    "js": "dist/index.js",
+    "css": "dist/style.css",
+    "author": "ICSLI",
+    "version": "1.0.0"
+}
