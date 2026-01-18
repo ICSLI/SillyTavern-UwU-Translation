@@ -13,6 +13,9 @@ interface ExtensionSettings {
   outputTargetLanguage: string;
   autoMode: AutoModeOptions;
   prompt: string;
+  enableContext: boolean;
+  contextMessageCount: number;
+  contextFormat: 'simple' | 'detailed';
 }
 
 const VERSION = '1.0.0';
@@ -21,12 +24,13 @@ const FORMAT_VERSION = 'F_1.0';
 const DEFAULT_PROMPT = `<|im_start|>user
 You are a professional translator.
 
-Translate the text within <text> tags into {{lang}}.
+{{context}}Translate the text within <text> tags into {{lang}}.
 
 Rules:
 - Preserve the original meaning, tone, and structure
 - Keep proper nouns unchanged unless they have standard translations
 - Adapt idioms naturally for the target language
+- Consider the previous message context when provided
 - Return ONLY the translation, without any prefixes or meta-commentary
 
 <text>
@@ -42,6 +46,9 @@ const defaultSettings: ExtensionSettings = {
   outputTargetLanguage: 'English',
   autoMode: AutoModeOptions.NONE,
   prompt: DEFAULT_PROMPT,
+  enableContext: false,
+  contextMessageCount: 3,
+  contextFormat: 'simple',
 };
 
 const EXTENSION_KEY = 'uwuTranslationSimple';
@@ -243,7 +250,7 @@ async function initUI() {
       }
 
       const settings = settingsManager.getSettings();
-      const translatedText = await translateText(textToTranslate, settings.inputTargetLanguage);
+      const translatedText = await translateText(textToTranslate, settings.inputTargetLanguage, undefined, undefined);
 
       if (translatedText) {
         if (isSelection) {
@@ -299,6 +306,33 @@ async function initSettings() {
     settingsManager.saveSettings();
   });
 
+  // Enable context checkbox
+  const enableContextElement = $('#uwu_translation_enable_context');
+  enableContextElement.prop('checked', settings.enableContext);
+  enableContextElement.on('change', function () {
+    settings.enableContext = $(this).is(':checked');
+    settingsManager.saveSettings();
+  });
+
+  // Context message count
+  const contextCountElement = $('#uwu_translation_context_count');
+  contextCountElement.val(settings.contextMessageCount);
+  contextCountElement.on('change', function () {
+    const value = Number(contextCountElement.val());
+    if (value >= 1 && value <= 10) {
+      settings.contextMessageCount = value;
+      settingsManager.saveSettings();
+    }
+  });
+
+  // Context format
+  const contextFormatElement = $('#uwu_translation_context_format');
+  contextFormatElement.val(settings.contextFormat);
+  contextFormatElement.on('change', function () {
+    settings.contextFormat = contextFormatElement.val() as 'simple' | 'detailed';
+    settingsManager.saveSettings();
+  });
+
   // Prompt textarea
   const promptElement = $('#uwu_translation_prompt');
   promptElement.val(settings.prompt);
@@ -308,10 +342,46 @@ async function initSettings() {
   });
 }
 
+/**
+ * Build context string from previous messages
+ * @param messageId Current message ID
+ * @param count Number of previous messages to include
+ * @param format Format style ('simple' or 'detailed')
+ * @returns Formatted context string or empty if disabled
+ */
+function buildContextString(messageId: number, count: number, format: 'simple' | 'detailed'): string {
+  const settings = settingsManager.getSettings();
+
+  // Return empty if context disabled
+  if (!settings.enableContext || count <= 0) {
+    return '';
+  }
+
+  // Collect previous messages (excluding current message)
+  const startIndex = Math.max(0, messageId - count);
+  const previousMessages = context.chat.slice(startIndex, messageId);
+
+  // Return empty if no previous messages
+  if (previousMessages.length === 0) {
+    return '';
+  }
+
+  // Build context string based on format
+  if (format === 'simple') {
+    // Format: "Name: Message\nName: Message\n"
+    return previousMessages.map((msg) => `${msg.name}: ${msg.mes}`).join('\n') + '\n\n';
+  } else {
+    // Format: "Previous messages:\n[Name]: Message\n[Name]: Message\n"
+    const contextLines = previousMessages.map((msg) => `[${msg.name}]: ${msg.mes}`).join('\n');
+    return `Previous messages:\n${contextLines}\n\n`;
+  }
+}
+
 async function translateText(
   text: string,
   targetLanguage: string,
   profileId?: string,
+  messageId?: number,
 ): Promise<string | null> {
   const settings = settingsManager.getSettings();
 
@@ -331,10 +401,17 @@ async function translateText(
     return null;
   }
 
-  // Simple variable substitution for {{lang}} and {{text}}
+  // Build context string if messageId provided
+  let contextString = '';
+  if (messageId !== undefined && messageId >= 0) {
+    contextString = buildContextString(messageId, settings.contextMessageCount, settings.contextFormat);
+  }
+
+  // Simple variable substitution for {{lang}}, {{text}}, and {{context}}
   let renderedPrompt = settings.prompt
     .replace(/\{\{lang\}\}/g, targetLanguage)
-    .replace(/\{\{text\}\}/g, text);
+    .replace(/\{\{text\}\}/g, text)
+    .replace(/\{\{context\}\}/g, contextString);
 
   try {
     const response = await sendGenerateRequest(selectedProfileId, renderedPrompt);
@@ -371,7 +448,7 @@ async function generateMessage(messageId: number, type: 'userInput' | 'incomingM
 
   try {
     const textToTranslate = message.mes ?? '';
-    const displayText = await translateText(textToTranslate, targetLanguage);
+    const displayText = await translateText(textToTranslate, targetLanguage, undefined, messageId);
 
     if (!displayText) {
       return;

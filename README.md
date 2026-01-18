@@ -37,6 +37,9 @@ A simple translation extension for SillyTavern using Connection Manager profiles
 | **Auto Mode** | `None` / `Responses` / `Inputs` / `Both` |
 | **Input Target Language** | Language for translating your messages |
 | **Output Target Language** | Language for translating AI responses |
+| **Enable Previous Message Context** | Include previous messages for translation context |
+| **Context Message Count** | Number of previous messages to include (1-10) |
+| **Context Format** | Simple or detailed formatting for context |
 | **Translation Prompt** | Customizable prompt with ChatML support |
 
 ## 📖 Usage
@@ -77,6 +80,7 @@ Click the translation button in the extensions menu (wand icon) to translate tex
 |----------|-------------|
 | `{{lang}}` | Target language (from settings) |
 | `{{text}}` | Text to translate |
+| `{{context}}` | Previous message context (when enabled) |
 
 ### Default Prompt
 
@@ -84,12 +88,13 @@ Click the translation button in the extensions menu (wand icon) to translate tex
 <|im_start|>user
 You are a professional translator.
 
-Translate the text within <text> tags into {{lang}}.
+{{context}}Translate the text within <text> tags into {{lang}}.
 
 Rules:
 - Preserve the original meaning, tone, and structure
 - Keep proper nouns unchanged unless they have standard translations
 - Adapt idioms naturally for the target language
+- Consider the previous message context when provided
 - Return ONLY the translation, without any prefixes or meta-commentary
 
 <text>
@@ -97,6 +102,42 @@ Rules:
 </text>
 <|im_end|>
 ```
+
+## 💬 Context Feature
+
+Enable **Previous Message Context** to provide translation with awareness of previous messages. This helps maintain consistency and improve translation quality.
+
+### Configuration
+
+- **Enable Previous Message Context**: Toggle on/off
+- **Context Message Count**: 1-10 messages (default: 3)
+- **Context Format**:
+  - **Simple**: `Name: Message`
+  - **Detailed**: `Previous messages:\n[Name]: Message`
+
+### Example
+
+With context enabled (count: 2, format: simple):
+
+```
+Alice: Hello, how are you?
+Bob: I'm doing great, thanks!
+
+Translate the text within <text> tags into Korean.
+<text>
+That's wonderful to hear!
+</text>
+```
+
+The translator can see the conversation flow and provide contextually appropriate translations.
+
+### When Context is Not Available
+
+- Manual translation in input field (no messageId)
+- Context disabled in settings
+- No previous messages (first message)
+
+The `{{context}}` variable will be replaced with an empty string.
 
 ## 💾 Data Storage
 

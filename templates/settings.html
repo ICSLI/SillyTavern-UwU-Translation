@@ -35,6 +35,29 @@
                 </div>
             </div>
 
+            <div class="flex-container marginTopBot5">
+                <div class="flex-container flex1 flexFlowColumn" title="Include previous messages in translation context">
+                    <label for="uwu_translation_enable_context">
+                        <input type="checkbox" id="uwu_translation_enable_context">
+                        <small>Enable Previous Message Context</small>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex-container marginTopBot5">
+                <div class="flex-container flex1 flexFlowColumn" title="Number of previous messages (1-10)">
+                    <label for="uwu_translation_context_count"><small>Context Message Count</small></label>
+                    <input id="uwu_translation_context_count" type="number" class="text_pole" min="1" max="10" value="3">
+                </div>
+                <div class="flex-container flex1 flexFlowColumn" title="Context format style">
+                    <label for="uwu_translation_context_format"><small>Context Format</small></label>
+                    <select id="uwu_translation_context_format" class="text_pole">
+                        <option value="simple">Simple (Name: Message)</option>
+                        <option value="detailed">Detailed ([Name]: Message)</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="flex-container flexFlowColumn marginTopBot5">
                 <label for="uwu_translation_prompt"><small>Translation Prompt (ChatML Support)</small></label>
                 <textarea id="uwu_translation_prompt" class="text_pole textarea_compact" rows="6" placeholder="Use {{lang}} for target language and {{text}} for content to translate."></textarea>
