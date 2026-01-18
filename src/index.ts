@@ -13,9 +13,10 @@ interface ExtensionSettings {
   outputTargetLanguage: string;
   autoMode: AutoModeOptions;
   prompt: string;
-  enableContext: boolean;
   contextMessageCount: number;
-  contextFormat: 'simple' | 'detailed';
+  contextUserLabel: string;
+  contextCharLabel: string;
+  contextSeparator: string;
 }
 
 const VERSION = '1.0.0';
@@ -46,9 +47,10 @@ const defaultSettings: ExtensionSettings = {
   outputTargetLanguage: 'English',
   autoMode: AutoModeOptions.NONE,
   prompt: DEFAULT_PROMPT,
-  enableContext: false,
   contextMessageCount: 3,
-  contextFormat: 'simple',
+  contextUserLabel: '{{user}}',
+  contextCharLabel: '{{char}}',
+  contextSeparator: ':',
 };
 
 const EXTENSION_KEY = 'uwuTranslationSimple';
@@ -250,7 +252,13 @@ async function initUI() {
       }
 
       const settings = settingsManager.getSettings();
-      const translatedText = await translateText(textToTranslate, settings.inputTargetLanguage, undefined, undefined);
+      const translatedText = await translateText(
+        textToTranslate,
+        settings.inputTargetLanguage,
+        undefined,
+        undefined,
+        undefined,
+      );
 
       if (translatedText) {
         if (isSelection) {
@@ -306,14 +314,6 @@ async function initSettings() {
     settingsManager.saveSettings();
   });
 
-  // Enable context checkbox
-  const enableContextElement = $('#uwu_translation_enable_context');
-  enableContextElement.prop('checked', settings.enableContext);
-  enableContextElement.on('change', function () {
-    settings.enableContext = $(this).is(':checked');
-    settingsManager.saveSettings();
-  });
-
   // Context message count
   const contextCountElement = $('#uwu_translation_context_count');
   contextCountElement.val(settings.contextMessageCount);
@@ -325,11 +325,27 @@ async function initSettings() {
     }
   });
 
-  // Context format
-  const contextFormatElement = $('#uwu_translation_context_format');
-  contextFormatElement.val(settings.contextFormat);
-  contextFormatElement.on('change', function () {
-    settings.contextFormat = contextFormatElement.val() as 'simple' | 'detailed';
+  // Context user label
+  const contextUserLabelElement = $('#uwu_translation_context_user_label');
+  contextUserLabelElement.val(settings.contextUserLabel);
+  contextUserLabelElement.on('change', function () {
+    settings.contextUserLabel = contextUserLabelElement.val() as string;
+    settingsManager.saveSettings();
+  });
+
+  // Context char label
+  const contextCharLabelElement = $('#uwu_translation_context_char_label');
+  contextCharLabelElement.val(settings.contextCharLabel);
+  contextCharLabelElement.on('change', function () {
+    settings.contextCharLabel = contextCharLabelElement.val() as string;
+    settingsManager.saveSettings();
+  });
+
+  // Context separator
+  const contextSeparatorElement = $('#uwu_translation_context_separator');
+  contextSeparatorElement.val(settings.contextSeparator);
+  contextSeparatorElement.on('change', function () {
+    settings.contextSeparator = contextSeparatorElement.val() as string;
     settingsManager.saveSettings();
   });
 
@@ -346,14 +362,19 @@ async function initSettings() {
  * Build context string from previous messages
  * @param messageId Current message ID
  * @param count Number of previous messages to include
- * @param format Format style ('simple' or 'detailed')
- * @returns Formatted context string or empty if disabled
+ * @param userLabel Label for user messages (e.g., "{{user}}")
+ * @param charLabel Label for character messages (e.g., "{{char}}")
+ * @param separator Separator between label and message (e.g., ":")
+ * @returns Formatted context string
  */
-function buildContextString(messageId: number, count: number, format: 'simple' | 'detailed'): string {
-  const settings = settingsManager.getSettings();
-
-  // Return empty if context disabled
-  if (!settings.enableContext || count <= 0) {
+function buildContextString(
+  messageId: number,
+  count: number,
+  userLabel: string,
+  charLabel: string,
+  separator: string,
+): string {
+  if (count <= 0) {
     return '';
   }
 
@@ -366,15 +387,15 @@ function buildContextString(messageId: number, count: number, format: 'simple' |
     return '';
   }
 
-  // Build context string based on format
-  if (format === 'simple') {
-    // Format: "Name: Message\nName: Message\n"
-    return previousMessages.map((msg) => `${msg.name}: ${msg.mes}`).join('\n') + '\n\n';
-  } else {
-    // Format: "Previous messages:\n[Name]: Message\n[Name]: Message\n"
-    const contextLines = previousMessages.map((msg) => `[${msg.name}]: ${msg.mes}`).join('\n');
-    return `Previous messages:\n${contextLines}\n\n`;
-  }
+  // Build context string using labels
+  const contextLines = previousMessages
+    .map((msg) => {
+      const label = msg.is_user ? userLabel : charLabel;
+      return `${label}${separator} ${msg.mes}`;
+    })
+    .join('\n');
+
+  return contextLines + '\n\n';
 }
 
 async function translateText(
@@ -382,6 +403,7 @@ async function translateText(
   targetLanguage: string,
   profileId?: string,
   messageId?: number,
+  speakerName?: string,
 ): Promise<string | null> {
   const settings = settingsManager.getSettings();
 
@@ -404,14 +426,21 @@ async function translateText(
   // Build context string if messageId provided
   let contextString = '';
   if (messageId !== undefined && messageId >= 0) {
-    contextString = buildContextString(messageId, settings.contextMessageCount, settings.contextFormat);
+    contextString = buildContextString(
+      messageId,
+      settings.contextMessageCount,
+      settings.contextUserLabel,
+      settings.contextCharLabel,
+      settings.contextSeparator,
+    );
   }
 
-  // Simple variable substitution for {{lang}}, {{text}}, and {{context}}
+  // Simple variable substitution for {{lang}}, {{text}}, {{context}}, and {{name}}
   let renderedPrompt = settings.prompt
     .replace(/\{\{lang\}\}/g, targetLanguage)
     .replace(/\{\{text\}\}/g, text)
-    .replace(/\{\{context\}\}/g, contextString);
+    .replace(/\{\{context\}\}/g, contextString)
+    .replace(/\{\{name\}\}/g, speakerName || '');
 
   try {
     const response = await sendGenerateRequest(selectedProfileId, renderedPrompt);
@@ -448,7 +477,8 @@ async function generateMessage(messageId: number, type: 'userInput' | 'incomingM
 
   try {
     const textToTranslate = message.mes ?? '';
-    const displayText = await translateText(textToTranslate, targetLanguage, undefined, messageId);
+    const speakerName = message.name ?? '';
+    const displayText = await translateText(textToTranslate, targetLanguage, undefined, messageId, speakerName);
 
     if (!displayText) {
       return;

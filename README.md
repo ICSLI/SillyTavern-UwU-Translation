@@ -37,9 +37,10 @@ A simple translation extension for SillyTavern using Connection Manager profiles
 | **Auto Mode** | `None` / `Responses` / `Inputs` / `Both` |
 | **Input Target Language** | Language for translating your messages |
 | **Output Target Language** | Language for translating AI responses |
-| **Enable Previous Message Context** | Include previous messages for translation context |
 | **Context Message Count** | Number of previous messages to include (1-10) |
-| **Context Format** | Simple or detailed formatting for context |
+| **Context User Label** | Label for user messages (e.g., `{{user}}`) |
+| **Context Char Label** | Label for character messages (e.g., `{{char}}`) |
+| **Context Separator** | Separator between label and message (e.g., `:`) |
 | **Translation Prompt** | Customizable prompt with ChatML support |
 
 ## 📖 Usage
@@ -80,7 +81,8 @@ Click the translation button in the extensions menu (wand icon) to translate tex
 |----------|-------------|
 | `{{lang}}` | Target language (from settings) |
 | `{{text}}` | Text to translate |
-| `{{context}}` | Previous message context (when enabled) |
+| `{{context}}` | Previous message context (formatted with labels) |
+| `{{name}}` | Speaker name of the message being translated |
 
 ### Default Prompt
 
@@ -105,23 +107,32 @@ Rules:
 
 ## 💬 Context Feature
 
-Enable **Previous Message Context** to provide translation with awareness of previous messages. This helps maintain consistency and improve translation quality.
+The `{{context}}` variable in your prompt includes previous messages to help maintain consistency and improve translation quality.
 
 ### Configuration
 
-- **Enable Previous Message Context**: Toggle on/off
-- **Context Message Count**: 1-10 messages (default: 3)
-- **Context Format**:
-  - **Simple**: `Name: Message`
-  - **Detailed**: `Previous messages:\n[Name]: Message`
+- **Context Message Count**: Number of previous messages to include (1-10, default: 3)
+- **Context User Label**: Label for user messages (default: `{{user}}`)
+- **Context Char Label**: Label for character messages (default: `{{char}}`)
+- **Context Separator**: Separator between label and message (default: `:`)
 
-### Example
+### How It Works
 
-With context enabled (count: 2, format: simple):
+Previous messages are formatted as: `[Label][Separator] [Message]`
+
+For example, with default settings:
+```
+{{user}}: Hello, how are you?
+{{char}}: I'm doing great, thanks!
+```
+
+### Example Usage
+
+With context count: 2, user label: `User`, char label: `Assistant`, separator: `:`:
 
 ```
-Alice: Hello, how are you?
-Bob: I'm doing great, thanks!
+User: Hello, how are you?
+Assistant: I'm doing great, thanks!
 
 Translate the text within <text> tags into Korean.
 <text>
@@ -131,11 +142,11 @@ That's wonderful to hear!
 
 The translator can see the conversation flow and provide contextually appropriate translations.
 
-### When Context is Not Available
+### When Context is Empty
 
 - Manual translation in input field (no messageId)
-- Context disabled in settings
-- No previous messages (first message)
+- No previous messages (first message in chat)
+- Context count set to 0
 
 The `{{context}}` variable will be replaced with an empty string.
 
