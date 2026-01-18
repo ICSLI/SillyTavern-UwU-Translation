@@ -359,9 +359,11 @@ async function initSettings() {
 
   // Context message separator
   const contextMessageSeparatorElement = $('#uwu_translation_context_message_separator');
-  contextMessageSeparatorElement.val(settings.contextMessageSeparator);
+  // Display escaped newlines in UI (e.g., \n\n as \\n\\n)
+  contextMessageSeparatorElement.val(settings.contextMessageSeparator.replace(/\n/g, '\\n'));
   contextMessageSeparatorElement.on('change', function () {
-    settings.contextMessageSeparator = contextMessageSeparatorElement.val() as string;
+    // Convert escaped newlines back to actual newlines
+    settings.contextMessageSeparator = (contextMessageSeparatorElement.val() as string).replace(/\\n/g, '\n');
     settingsManager.saveSettings();
   });
 
