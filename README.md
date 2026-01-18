@@ -85,13 +85,37 @@ Click the translation button in the extensions menu (wand icon) to translate tex
 | `{{context}}` | Previous message context (formatted with labels) |
 | `{{name}}` | Speaker name of the message being translated |
 
+### Conditional Syntax
+
+You can use `{{#if context}}...{{/if}}` to conditionally include content only when context is available:
+
+```
+{{#if context}}
+<context>
+{{context}}
+</context>
+{{/if}}
+```
+
+This block will be removed entirely if no context is available, keeping your prompt clean.
+
 ### Default Prompt
 
 ```
 <|im_start|>user
 You are a professional translator.
 
-{{context}}Translate the text within <text> tags into {{lang}}.
+Translate the message from {{name}} within <text> tags into {{lang}}.
+{{#if context}}
+
+<context>
+{{context}}
+</context>
+{{/if}}
+
+<text>
+{{text}}
+</text>
 
 Rules:
 - Preserve the original meaning, tone, and structure
@@ -99,10 +123,6 @@ Rules:
 - Adapt idioms naturally for the target language
 - Consider the previous message context when provided
 - Return ONLY the translation, without any prefixes or meta-commentary
-
-<text>
-{{text}}
-</text>
 <|im_end|>
 ```
 

@@ -26,7 +26,17 @@ const FORMAT_VERSION = 'F_1.0';
 const DEFAULT_PROMPT = `<|im_start|>user
 You are a professional translator.
 
-{{context}}Translate the text within <text> tags into {{lang}}.
+Translate the message from {{name}} within <text> tags into {{lang}}.
+{{#if context}}
+
+<context>
+{{context}}
+</context>
+{{/if}}
+
+<text>
+{{text}}
+</text>
 
 Rules:
 - Preserve the original meaning, tone, and structure
@@ -34,10 +44,6 @@ Rules:
 - Adapt idioms naturally for the target language
 - Consider the previous message context when provided
 - Return ONLY the translation, without any prefixes or meta-commentary
-
-<text>
-{{text}}
-</text>
 <|im_end|>`;
 
 const defaultSettings: ExtensionSettings = {
@@ -448,8 +454,16 @@ async function translateText(
     );
   }
 
-  // Simple variable substitution for {{lang}}, {{text}}, {{context}}, and {{name}}
-  let renderedPrompt = settings.prompt
+  // Handle {{#if context}} conditional blocks
+  let renderedPrompt = settings.prompt;
+  if (contextString) {
+    renderedPrompt = renderedPrompt.replace(/\{\{#if context\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+  } else {
+    renderedPrompt = renderedPrompt.replace(/\{\{#if context\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+  }
+
+  // Variable substitution for {{lang}}, {{text}}, {{context}}, and {{name}}
+  renderedPrompt = renderedPrompt
     .replace(/\{\{lang\}\}/g, targetLanguage)
     .replace(/\{\{text\}\}/g, text)
     .replace(/\{\{context\}\}/g, contextString)
