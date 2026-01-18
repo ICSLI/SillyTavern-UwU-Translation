@@ -17,6 +17,7 @@ interface ExtensionSettings {
   contextUserLabel: string;
   contextCharLabel: string;
   contextSeparator: string;
+  contextMessageSeparator: string;
 }
 
 const VERSION = '1.0.0';
@@ -51,6 +52,7 @@ const defaultSettings: ExtensionSettings = {
   contextUserLabel: '{{user}}',
   contextCharLabel: '{{char}}',
   contextSeparator: ': ',
+  contextMessageSeparator: '\n\n',
 };
 
 const EXTENSION_KEY = 'uwuTranslationSimple';
@@ -349,6 +351,14 @@ async function initSettings() {
     settingsManager.saveSettings();
   });
 
+  // Context message separator
+  const contextMessageSeparatorElement = $('#uwu_translation_context_message_separator');
+  contextMessageSeparatorElement.val(settings.contextMessageSeparator);
+  contextMessageSeparatorElement.on('change', function () {
+    settings.contextMessageSeparator = contextMessageSeparatorElement.val() as string;
+    settingsManager.saveSettings();
+  });
+
   // Prompt textarea
   const promptElement = $('#uwu_translation_prompt');
   promptElement.val(settings.prompt);
@@ -364,7 +374,8 @@ async function initSettings() {
  * @param count Number of previous messages to include
  * @param userLabel Label for user messages (e.g., "{{user}}")
  * @param charLabel Label for character messages (e.g., "{{char}}")
- * @param separator Separator between label and message (e.g., ":")
+ * @param separator Separator between label and message (e.g., ": ")
+ * @param messageSeparator Separator between messages (e.g., "\n\n")
  * @returns Formatted context string
  */
 function buildContextString(
@@ -373,6 +384,7 @@ function buildContextString(
   userLabel: string,
   charLabel: string,
   separator: string,
+  messageSeparator: string,
 ): string {
   if (count <= 0) {
     return '';
@@ -391,9 +403,9 @@ function buildContextString(
   const contextLines = previousMessages
     .map((msg) => {
       const label = msg.is_user ? userLabel : charLabel;
-      return `${label}${separator} ${msg.mes}`;
+      return `${label}${separator}${msg.mes}`;
     })
-    .join('\n');
+    .join(messageSeparator);
 
   return contextLines + '\n\n';
 }
@@ -432,6 +444,7 @@ async function translateText(
       settings.contextUserLabel,
       settings.contextCharLabel,
       settings.contextSeparator,
+      settings.contextMessageSeparator,
     );
   }
 

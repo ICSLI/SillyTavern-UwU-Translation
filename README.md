@@ -41,6 +41,7 @@ A simple translation extension for SillyTavern using Connection Manager profiles
 | **Context User Label** | Label for user messages (e.g., `{{user}}`) |
 | **Context Char Label** | Label for character messages (e.g., `{{char}}`) |
 | **Context Separator** | Separator between label and message (e.g., `: `) |
+| **Context Message Separator** | Separator between messages (e.g., `\n\n` for double line break) |
 | **Translation Prompt** | Customizable prompt with ChatML support |
 
 ## 📖 Usage
@@ -115,28 +116,34 @@ The `{{context}}` variable in your prompt includes previous messages to help mai
 - **Context User Label**: Label for user messages (default: `{{user}}`)
 - **Context Char Label**: Label for character messages (default: `{{char}}`)
 - **Context Separator**: Separator between label and message (default: `: `)
+- **Context Message Separator**: Separator between messages (default: `\n\n` - double line break)
 
 ### How It Works
 
-Previous messages are formatted as: `[Label][Separator] [Message]`
+Previous messages are formatted as: `[Label][Separator][Message]`
 
-For example, with default settings:
+Messages are separated by the Context Message Separator to distinguish multi-line messages. With default settings:
 ```
 {{user}}: Hello, how are you?
+
 {{char}}: I'm doing great, thanks!
+How about you?
 ```
+
+The double line break (`\n\n`) makes it clear that "How about you?" belongs to the character's message, not a new message.
 
 ### Example Usage
 
-With context count: 2, user label: `User`, char label: `Assistant`, separator: `:`:
+With context count: 2, user label: `User`, char label: `Assistant`, separator: `:`, message separator: `\n\n`:
 
 ```
 User: Hello, how are you?
-Assistant: I'm doing great, thanks!
 
-Translate the text within <text> tags into Korean.
+Assistant: I'm doing great, thanks\!
+
+Translate the text within <text> tags into English.
 <text>
-That's wonderful to hear!
+That's wonderful to hear\!
 </text>
 ```
 
