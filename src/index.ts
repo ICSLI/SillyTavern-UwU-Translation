@@ -50,7 +50,7 @@ const defaultSettings: ExtensionSettings = {
   contextMessageCount: 3,
   contextUserLabel: '{{user}}',
   contextCharLabel: '{{char}}',
-  contextSeparator: ':',
+  contextSeparator: ': ',
 };
 
 const EXTENSION_KEY = 'uwuTranslationSimple';

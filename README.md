@@ -40,7 +40,7 @@ A simple translation extension for SillyTavern using Connection Manager profiles
 | **Context Message Count** | Number of previous messages to include (1-10) |
 | **Context User Label** | Label for user messages (e.g., `{{user}}`) |
 | **Context Char Label** | Label for character messages (e.g., `{{char}}`) |
-| **Context Separator** | Separator between label and message (e.g., `:`) |
+| **Context Separator** | Separator between label and message (e.g., `: `) |
 | **Translation Prompt** | Customizable prompt with ChatML support |
 
 ## 📖 Usage
@@ -114,7 +114,7 @@ The `{{context}}` variable in your prompt includes previous messages to help mai
 - **Context Message Count**: Number of previous messages to include (1-10, default: 3)
 - **Context User Label**: Label for user messages (default: `{{user}}`)
 - **Context Char Label**: Label for character messages (default: `{{char}}`)
-- **Context Separator**: Separator between label and message (default: `:`)
+- **Context Separator**: Separator between label and message (default: `: `)
 
 ### How It Works
 
