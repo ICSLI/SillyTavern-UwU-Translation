@@ -171,7 +171,19 @@ async function initUI() {
     }
 
     // State 2: Cache exists but hidden → Show cached
-    if (message?.extra?.uwu_cached_translation) {
+    // For swipe messages, check swipe-specific cache
+    if (message.swipes && Array.isArray(message.swipes)) {
+      const currentSwipeId = message.swipe_id ?? 0;
+      const swipeCached = message?.extra?.uwu_translation_swipes?.[currentSwipeId];
+      if (swipeCached && message.extra) {
+        message.extra.display_text = swipeCached;
+        st_updateMessageBlock(messageId, message);
+        await context.saveChat();
+        messageBlock.find('.mes_uwu_retranslate_button').show();
+        return;
+      }
+    } else if (message?.extra?.uwu_cached_translation) {
+      // Fallback to old cache for non-swipe messages
       message.extra.display_text = message.extra.uwu_cached_translation;
       st_updateMessageBlock(messageId, message);
       await context.saveChat();
@@ -196,6 +208,11 @@ async function initUI() {
     if (message?.extra) {
       delete message.extra.display_text;
       delete message.extra.uwu_cached_translation;
+      // Delete current swipe's translation cache
+      if (message.swipes && message.extra.uwu_translation_swipes) {
+        const currentSwipeId = message.swipe_id ?? 0;
+        delete message.extra.uwu_translation_swipes[currentSwipeId];
+      }
     }
     await generateMessage(messageId, 'incomingMessage');
     context.eventSource.emit('uwu_translation_done', { messageId, type: 'incomingMessage', auto: false });
@@ -222,6 +239,14 @@ async function initUI() {
     const currentSettings = settingsManager.getSettings();
     if (outgoingTypes.includes(currentSettings.autoMode)) {
       await generateMessage(messageId, 'userInput');
+    }
+  });
+
+  // Handle swipe events - translate new swipes automatically
+  context.eventSource.on(EventNames.MESSAGE_SWIPED, async (messageId: number) => {
+    const currentSettings = settingsManager.getSettings();
+    if (incomingTypes.includes(currentSettings.autoMode)) {
+      await generateMessage(messageId, 'incomingMessage');
     }
   });
 
@@ -505,24 +530,62 @@ async function generateMessage(messageId: number, type: 'userInput' | 'incomingM
   generating.push(messageId);
 
   try {
-    const textToTranslate = message.mes ?? '';
-    const speakerName = message.name ?? '';
-    const displayText = await translateText(textToTranslate, targetLanguage, undefined, messageId, speakerName);
+    // For incoming messages with swipes, check if translation already exists for current swipe
+    if (type === 'incomingMessage' && message.swipes && Array.isArray(message.swipes)) {
+      const currentSwipeId = message.swipe_id ?? 0;
 
-    if (!displayText) {
-      return;
-    }
-
-    if (type === 'userInput') {
-      message.mes = displayText;
-    } else {
+      // Initialize swipe translations storage if it doesn't exist
       if (typeof message.extra !== 'object') {
         message.extra = {};
       }
+      if (typeof message.extra.uwu_translation_swipes !== 'object') {
+        message.extra.uwu_translation_swipes = {};
+      }
+
+      // Check if current swipe already has a translation
+      if (message.extra.uwu_translation_swipes[currentSwipeId]) {
+        message.extra.display_text = message.extra.uwu_translation_swipes[currentSwipeId];
+        st_updateMessageBlock(messageId, message);
+        $(`.mes[mesid="${messageId}"]`).find('.mes_uwu_retranslate_button').show();
+        return;
+      }
+
+      // Translate current swipe
+      const textToTranslate = message.swipes[currentSwipeId] ?? message.mes;
+      const speakerName = message.name ?? '';
+      const displayText = await translateText(textToTranslate, targetLanguage, undefined, messageId, speakerName);
+
+      if (!displayText) {
+        return;
+      }
+
+      // Save translation for this specific swipe
+      message.extra.uwu_translation_swipes[currentSwipeId] = displayText;
       message.extra.display_text = displayText;
-      message.extra.uwu_cached_translation = displayText;
+      message.extra.uwu_cached_translation = displayText; // Backward compatibility
       $(`.mes[mesid="${messageId}"]`).find('.mes_uwu_retranslate_button').show();
+    } else {
+      // User input or messages without swipes
+      const textToTranslate = message.mes ?? '';
+      const speakerName = message.name ?? '';
+      const displayText = await translateText(textToTranslate, targetLanguage, undefined, messageId, speakerName);
+
+      if (!displayText) {
+        return;
+      }
+
+      if (type === 'userInput') {
+        message.mes = displayText;
+      } else {
+        if (typeof message.extra !== 'object') {
+          message.extra = {};
+        }
+        message.extra.display_text = displayText;
+        message.extra.uwu_cached_translation = displayText;
+        $(`.mes[mesid="${messageId}"]`).find('.mes_uwu_retranslate_button').show();
+      }
     }
+
     st_updateMessageBlock(messageId, message);
     await context.saveChat();
   } catch (error) {
