@@ -37,6 +37,7 @@ A simple translation extension for SillyTavern using Connection Manager profiles
 | **Auto Mode** | `None` / `Responses` / `Inputs` / `Both` |
 | **Input Target Language** | Language for translating your messages |
 | **Output Target Language** | Language for translating AI responses |
+| **Max Tokens** | Maximum tokens for translation response (default: 4096, 0 = no limit) |
 | **Context Message Count** | Number of previous messages to include (1-10) |
 | **Context User Label** | Label for user messages (e.g., `{{user}}`) |
 | **Context Char Label** | Label for character messages (e.g., `{{char}}`) |

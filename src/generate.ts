@@ -2,8 +2,6 @@ import { ExtractedData } from 'sillytavern-utils-lib/types';
 import { context } from './config.js';
 import { st_echo } from 'sillytavern-utils-lib/config';
 
-const MAX_TOKENS = 4096;
-
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -61,7 +59,7 @@ export function parseChatML(prompt: string): ChatMessage[] {
   return messages;
 }
 
-export async function sendGenerateRequest(profileId: string, prompt: string): Promise<string | null> {
+export async function sendGenerateRequest(profileId: string, prompt: string, maxTokens: number = 4096): Promise<string | null> {
   const profile = context.extensionSettings.connectionManager!.profiles.find((p) => p.id === profileId);
   if (!profile) {
     st_echo('error', `Could not find profile with id ${profileId}`);
@@ -82,7 +80,7 @@ export async function sendGenerateRequest(profileId: string, prompt: string): Pr
   const response = (await context.ConnectionManagerRequestService.sendRequest(
     profile.id,
     messages,
-    MAX_TOKENS,
+    maxTokens,
   )) as ExtractedData;
   return response.content;
 }

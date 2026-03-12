@@ -13,6 +13,7 @@ interface ExtensionSettings {
   outputTargetLanguage: string;
   autoMode: AutoModeOptions;
   prompt: string;
+  maxTokens: number;
   contextMessageCount: number;
   contextUserLabel: string;
   contextCharLabel: string;
@@ -54,6 +55,7 @@ const defaultSettings: ExtensionSettings = {
   outputTargetLanguage: 'English',
   autoMode: AutoModeOptions.NONE,
   prompt: DEFAULT_PROMPT,
+  maxTokens: 4096,
   contextMessageCount: 3,
   contextUserLabel: '{{user}}',
   contextCharLabel: '{{char}}',
@@ -347,6 +349,17 @@ async function initSettings() {
     settingsManager.saveSettings();
   });
 
+  // Max tokens
+  const maxTokensElement = $('#uwu_translation_max_tokens');
+  maxTokensElement.val(settings.maxTokens);
+  maxTokensElement.on('change', function () {
+    const value = Number(maxTokensElement.val());
+    if (value >= 0) {
+      settings.maxTokens = value;
+      settingsManager.saveSettings();
+    }
+  });
+
   // Context message count
   const contextCountElement = $('#uwu_translation_context_count');
   contextCountElement.val(settings.contextMessageCount);
@@ -497,7 +510,7 @@ async function translateText(
     .replace(/\{\{name\}\}/g, speakerName || '');
 
   try {
-    const response = await sendGenerateRequest(selectedProfileId, renderedPrompt);
+    const response = await sendGenerateRequest(selectedProfileId, renderedPrompt, settings.maxTokens);
     return response;
   } catch (error) {
     console.error(error);
